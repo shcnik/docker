@@ -17,13 +17,8 @@ services:
       - 3306
     volumes:
       - ./db:/var/lib/mysql
-    environment:
-      - MYSQL_ROOT_PASSWORD=disco_sovenok
-      - MYSQL_PASSWORD=disco_sovenok
-      - MYSQL_USER=shcnik
-      - MYSQL_DATABASE=data
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --password=disco_sovenok --silent"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --password=${MYSQL_ROOT_PASSWORD} --silent"]
       interval: 3s
       retries: 3
       start_period: 30s
@@ -31,7 +26,7 @@ services:
       - docker_tpos
   filler:
     build: ./filler
-    command: bash fill.sh
+    command: bash fill.sh ${MYSQL_DATABASE} ${TABLE_NAME} ${MYSQL_USER} ${MYSQL_PASSWORD}
     depends_on:
       db:
         condition: service_healthy
