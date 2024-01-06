@@ -1,0 +1,48 @@
+networks:
+  docker_tpos:
+    name: docker_tpos
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.16.0.0/24
+
+services:
+  db:
+    image: mariadb:10.7
+    container_name: db
+    restart: always
+    ports:
+      - 3306:3306
+    expose:
+      - 3306
+    volumes:
+      - ./db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --password=${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 3s
+      retries: 3
+      start_period: 30s
+    networks:
+      - docker_tpos
+  filler:
+    build: ./filler
+    command: bash fill.sh ${MYSQL_DATABASE} ${TABLE_NAME} ${MYSQL_USER} ${MYSQL_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - docker_tpos
+    volumes:
+      - .:/home/contents
+  web:
+    build: ./web
+    depends_on:
+      - db
+    networks:
+      - docker_tpos
+    ports:
+      - "8000:5000"
+    expose:
+      - 8000
+
+
